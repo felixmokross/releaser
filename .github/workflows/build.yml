@@ -54,11 +54,13 @@ jobs:
 
           VERSION=$(echo "$RESULT" | jq -er '.version')
           PRERELEASE_TAG=$(echo "$RESULT" | jq -r '.prereleaseTag // "latest"')
-          IS_NEW_RELEASE=$(echo "$RESULT" | jq -er '.isNewRelease')
+          IS_NEW_RELEASE=$(echo "$RESULT" | jq -r '.isNewRelease')
 
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "prerelease_tag=$PRERELEASE_TAG" >> "$GITHUB_OUTPUT"
-          echo "is_new_release=$IS_NEW_RELEASE" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$VERSION"
+            echo "prerelease_tag=$PRERELEASE_TAG"
+            echo "is_new_release=$IS_NEW_RELEASE"
+          } >> "$GITHUB_OUTPUT"
         env:
           FORCE_RELEASE: ${{ inputs.force_release || false }}
       - name: Lint GitHub Actions workflows
