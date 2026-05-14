@@ -46,12 +46,15 @@ jobs:
         id: version
         if: github.event_name == 'workflow_dispatch' && inputs.release
         run: |
-          RESULT=$(pnpm start get-version --release)
+          RESULT=$(pnpm --silent start get-version --release)
 
           echo "$RESULT"
 
-          echo "version=$(echo "$RESULT" | jq -r '.version')" >> "$GITHUB_OUTPUT"
-          echo "prerelease_tag=$(echo "$RESULT" | jq -r '.prereleaseTag // "latest"')" >> "$GITHUB_OUTPUT"
+          VERSION=$(echo "$RESULT" | jq -er '.version')
+          PRERELEASE_TAG=$(echo "$RESULT" | jq -r '.prereleaseTag // "latest"')
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "prerelease_tag=$PRERELEASE_TAG" >> "$GITHUB_OUTPUT"
       - name: Version package
         if: github.event_name == 'workflow_dispatch' && inputs.release
         run: >-
