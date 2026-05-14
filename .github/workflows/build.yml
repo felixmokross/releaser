@@ -1,0 +1,76 @@
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Create a release
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install PNPM
+        uses: pnpm/action-setup@v4
+      - name: Set up Node.js with PNPM cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check formatting
+        run: pnpm format:check
+      - name: Build
+        run: pnpm build
+      - name: Get release version
+        id: version
+        if: github.event_name == 'workflow_dispatch' && inputs.release
+        run: |
+          RESULT=$(pnpm start get-version --release)
+
+          echo "$RESULT"
+
+          echo "version=$(echo "$RESULT" | jq -r '.version')" >> "$GITHUB_OUTPUT"
+          echo "prerelease_tag=$(echo "$RESULT" | jq -r '.prereleaseTag // "latest"')" >> "$GITHUB_OUTPUT"
+      - name: Version package
+        if: github.event_name == 'workflow_dispatch' && inputs.release
+        run: >-
+          pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version
+      - name: Build release package
+        if: github.event_name == 'workflow_dispatch' && inputs.release
+        run: pnpm build
+      - name: Create GitHub release
+        if: github.event_name == 'workflow_dispatch' && inputs.release
+        run: pnpm start publish --draft ${{ steps.version.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Add NPM token
+        if: github.event_name == 'workflow_dispatch' && inputs.release
+        run: echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' >> .npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish package
+        if: github.event_name == 'workflow_dispatch' && inputs.release
+        run: pnpm publish --access=public --no-git-checks --tag "$NPM_TAG"
+        env:
+          NPM_TAG: ${{ steps.version.outputs.prerelease_tag }}
