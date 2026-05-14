@@ -48,6 +48,7 @@ Use Node 24 or newer.
 
 ```sh
 pnpm install
+pnpm lint:actions
 pnpm format:check
 pnpm build
 ```
