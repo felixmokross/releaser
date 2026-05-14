@@ -10,7 +10,8 @@
     "start": "tsx src/index.ts",
     "build": "pkgroll",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "lint:actions": "github-actionlint"
   },
   "exports": "./dist/index.mjs",
   "bin": "./dist/index.mjs",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@types/node": "^24.12.4",
     "@types/semver": "^7.7.1",
+    "github-actionlint": "1.7.12",
     "pkgroll": "^2.27.0",
     "prettier": "3.5.3",
     "tsx": "^4.21.1"
